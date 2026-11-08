@@ -389,13 +389,23 @@ export function applyActivity(state, event) {
       };
 
     case 'turn/end': {
-      const reason = data.reason;
+      // 真实事件里 data.reason 是对象（{ kind: 'completed' | 'aborted' | 'error' | … }）；
+      // 早期版本按字符串比较，导致「已完成」的轮次也被标成失败（悬停卡片显示「失败 error」）。
+      const raw = data.reason;
+      const reason = typeof raw === 'string' ? raw : raw !== null && typeof raw === 'object' ? raw.kind : raw;
       const failed =
         reason !== undefined &&
         reason !== null &&
         reason !== 'completed' &&
         reason !== 'success' &&
         reason !== 'done';
+      const failureCode =
+        raw !== null && typeof raw === 'object' && raw.error !== null && typeof raw.error === 'object'
+          ? raw.error.code ?? raw.error.message
+          : undefined;
+      const label = failed
+        ? clip(typeof reason === 'string' ? (reason === 'error' ? failureCode ?? 'error' : reason) : 'error', 48)
+        : '';
       return {
         ...state,
         seq,
@@ -403,9 +413,7 @@ export function applyActivity(state, event) {
         turnEnd: time,
         stepStart: 0,
         tool: state.tool === null ? null : { ...state.tool, running: false, endedAt: time },
-        error: failed
-          ? { kind: 'turn', label: clip(typeof reason === 'string' ? reason : 'error', 48), at: time }
-          : state.error,
+        error: failed ? { kind: 'turn', label, at: time } : state.error,
       };
     }
 

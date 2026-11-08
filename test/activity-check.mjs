@@ -148,7 +148,7 @@ check('工具失败会被记成 error 且不污染 reply', () => {
 check('轮次异常终止会被记成 error', () => {
   let state = initActivity();
   state = applyActivity(state, ev('turn/start', { turn: 2 }, 1));
-  state = applyActivity(state, ev('turn/end', { turn: 2, reason: 'aborted' }, 2));
+  state = applyActivity(state, ev('turn/end', { turn: 2, reason: { kind: 'aborted', reason: { kind: 'user' } } }, 2));
   const view = viewActivity(state, 9000, false);
   assert.equal(view.running, false);
   assert.equal(view.error.kind, 'turn');
@@ -158,7 +158,7 @@ check('轮次异常终止会被记成 error', () => {
 check('正常结束不产生 error', () => {
   let state = initActivity();
   state = applyActivity(state, ev('turn/start', { turn: 3 }, 1));
-  state = applyActivity(state, ev('turn/end', { turn: 3, reason: 'completed' }, 2));
+  state = applyActivity(state, ev('turn/end', { turn: 3, reason: { kind: 'completed' } }, 2));
   assert.equal(viewActivity(state, 1, false).error, null);
 });
 
